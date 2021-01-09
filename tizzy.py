@@ -63,7 +63,7 @@ if __name__ == '__main__':
         ## Check for default states
         try:
             fsm.checkForDefaultState()
-        except FSMGen.MissingTransitionsError, info:
+        except FSMGen.MissingTransitionsError as info:
             sys.stderr.write("\nThe following states may not have all transition cases covered.\n")
             for i in info.states:
                 sys.stderr.write("    %s\n" % i)
@@ -73,7 +73,7 @@ if __name__ == '__main__':
         ## Check for duplicate state transitions
         try:
             fsm.checkForDuplicateTransitions()
-        except FSMGen.DuplicateTransitionError, info:
+        except FSMGen.DuplicateTransitionError as info:
             sys.stderr.write(info.error_message)
 
     if(options.output_file is not None):

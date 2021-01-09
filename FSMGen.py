@@ -120,7 +120,7 @@ class FSMGen():
 
         for i in state_trans:
             if(state_trans.count(i) > 1):
-                print "More than once: %s" % i
+                print("More than once: %s" % i)
 
         if(False):
             raise FSMError("Duplicate Affectors",
