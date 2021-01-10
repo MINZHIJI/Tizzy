@@ -4,3 +4,4 @@
 *.v
 *.vh
 function_test.py
+tb.dot
