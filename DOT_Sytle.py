@@ -24,7 +24,7 @@ def comment_replacer(match):
     start, mid, end = match.group(1, 2, 3)
     if mid is None:
         # single line comment
-        return ''
+        return match.group(0)
     elif start is not None or end is not None:
         # multi line comment at start or end of a line
         return ''
@@ -51,13 +51,59 @@ class Format_Dot_File():
             r'(^)?[^\S\n]*/(?:\*(.*?)\*/[^\S\n]*|/[^\n]*)($)?',
             re.DOTALL | re.MULTILINE
         )
+        # self.__del_cmt_re = re.compile(
+        #     r'/\*[\s\S]*?\*/',
+        #     re.DOTALL | re.MULTILINE
+        # )
+        
         self.__target_dotfile = self.__del_cmt_re.sub(comment_replacer, self.__source_dotfile)
         return self.__target_dotfile
 
 
-
-
-
 # TODO: Sort and create status groups
+    
+class Report_Dot_File():
+    def __init__(self, filename):
+        self.__source_dotfile = filename
+        self.__collect_start_word = "STATE_START"
+        self.__collect_end_word = "STATE_END"
+    # SUB_TODO: Create the state csv
+    def State_Collector(self):
+        """
+        Format:
+        // STATE_START <STATE_TYPE>
+        <STATE_NAME>
+        ...
+        // STATE_END
+        Example:
+        // STATE_START RAM_DU
+        RAM_Get_Test_Value
+        RAM_Set_Test_Value
+        // STATE_END
+        Description:
+        State_Collector will create RAM_DU type and record
+        the item in this type
+        """
+        print("Enter State_Collector")
+        re_state_start = re.compile(r'([ \t]*//[ \t]*STATE_START[ \t]*(\w+))')
+        re_state_end = re.compile(r'([ \t]*//[ \t]*STATE_END*)')
+        file = self.__source_dotfile.split('\n')
+        Declare_Flag = False
+        state_type = ""
+        state_list = []
+        for line in file:
+            m = re_state_start.search(line)
+            if(m is not None):
+                Declare_Flag = True
+                state_type = m.group(2)
+                print(state_type)
+                continue
+            m = re_state_end.search(line)
+            if(m is not None):
+                Declare_Flag = False
+                continue
+            if(Declare_Flag):
+                state_list.append(line)
 
-# TODO:
+        for entry in state_list:
+            print(entry)
