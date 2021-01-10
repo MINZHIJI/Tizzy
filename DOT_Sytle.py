@@ -85,30 +85,8 @@ class Report_Dot_File():
         re_state_end = re.compile(r'([ \t]*//[ \t]*STATE_END*)')
         file = self.__source_dotfile.split('\n')
         Declare_Flag = False
-        state_group = []
-        state_list = []
         stat_dirt = {}
-        state_list_index = 0
-        # for line in file:
-        #     m = re_state_start.search(line)
-        #     if(m is not None):
-        #         Declare_Flag = True
-        #         state_group.append()
-        #         state_list.append([])
-        #         continue
-        #     m = re_state_end.search(line)
-        #     if(m is not None):
-        #         Declare_Flag = False
-        #         state_list_index = state_list_index + 1
-        #         continue
-        #     if(Declare_Flag):
-        #         state_list[state_list_index].append(line)
-        # for group in state_list:
-        #     tmp_index = state_list.index(group)
-        #     print("[%s]"%state_group[tmp_index])
-        #     for entry in group:
-        #         print (entry)
-        #     print("------")
+
         for line in file:
             m = re_state_start.search(line)
             if(m is not None):
