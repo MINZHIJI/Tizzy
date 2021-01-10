@@ -3,3 +3,4 @@
 *.vim
 *.v
 *.vh
+function_test.py
