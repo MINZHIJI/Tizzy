@@ -21,10 +21,16 @@ from vlogTemplate import vlogTemplate
 from incTemplate import incTemplate
 
 def comment_replacer(match):
+    """
+    Function Name: comment_replacer
+    Function Description:
+        Remove comment in file
+    """
     start, mid, end = match.group(1, 2, 3)
     if mid is None:
         # single line comment
-        return match.group(0)
+        # return '' # remove single line
+        return match.group(0) # remain single line
     elif start is not None or end is not None:
         # multi line comment at start or end of a line
         return ''
@@ -35,8 +41,12 @@ def comment_replacer(match):
         # multi line comment without line break
         return ' '
 
-# TODO: Remove mutli-line comment
 class Format_Dot_File():
+    """
+    Class Name: Format_Dot_File
+    Class Description:
+        Pre-processing dot file to convenient to parser.
+    """
     def __init__(self):
         self.__source_dotfile = None
         self.__del_cmt_re = None
@@ -59,12 +69,15 @@ class Format_Dot_File():
 # TODO: Sort and create status groups
     
 class Report_Dot_File():
-    def __init__(self, filename):
-        self.__source_dotfile = filename
-        self.__collect_start_word = "STATE_START"
-        self.__collect_end_word = "STATE_END"
+    """
+    Class Name: Report_Dot_File
+    Class Description:
+        Paser dot file and build state list.
+    """
+    def __init__(self):
+        self.__file_dict = {}
     # SUB_TODO: Create the state csv
-    def State_Collector(self):
+    def State_Collector(self,file_ptr):
         """
         Format:
         // STATE_START <STATE_TYPE>
@@ -81,28 +94,35 @@ class Report_Dot_File():
         the item in this group
         """
         print("Enter State_Collector")
+
         re_state_start = re.compile(r'([ \t]*//[ \t]*STATE_START[ \t]*(\w+))')
         re_state_end = re.compile(r'([ \t]*//[ \t]*STATE_END*)')
-        file = self.__source_dotfile.split('\n')
+        re_state_name = re.compile(r'^(\w+)\s*(.*)')
+        file = file_ptr.split('\n')
         Declare_Flag = False
-        stat_dirt = {}
+        state_dict = {}
 
         for line in file:
             m = re_state_start.search(line)
             if(m is not None):
                 group_name = m.group(2)
                 Declare_Flag = True
-                if group_name not in stat_dirt:
-                    stat_dirt[group_name] = list()
+                if group_name not in state_dict:
+                    state_dict[group_name] = list()
                 continue
             m = re_state_end.search(line)
             if(m is not None):
                 Declare_Flag = False
                 continue
             if(Declare_Flag):
-                if group_name in stat_dirt:
-                    stat_dirt[group_name].append(line)
-        for state_group, state_list in stat_dirt.items():
+                if group_name in state_dict:
+                    state_name = re_state_name.search(line)
+                    if (state_name is not None):
+                        state_dict[group_name].append(state_name.group(0))
+        self.__file_dict  = state_dict
+        return state_dict
+    def print_state_dict(self,dirt):
+        for state_group, state_list in dirt.items():
             print("[%s]"%state_group)
             for entry in state_list:
                 print (entry)
