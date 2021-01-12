@@ -182,4 +182,11 @@ class Report_Dot_File():
                     # Next State
                     self.logger.debug("Adding transition: %s -> %s (%s)" %
                                     (state, next_state, affector))
-
+    def export_state_table_csv(self, dict, output_name):
+        str_temp_dict = {}
+        string_Temp = string.Template("""
+        
+        """)
+        file = open(output_name, 'w')
+        file.write(string_Temp.safe_substitute(str_temp_dict))
+        file.close
