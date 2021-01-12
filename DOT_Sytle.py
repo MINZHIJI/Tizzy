@@ -20,6 +20,7 @@ import help
 from vlogTemplate import vlogTemplate
 from incTemplate import incTemplate
 
+
 def comment_replacer(match):
     """
     Function Name: comment_replacer
@@ -30,7 +31,7 @@ def comment_replacer(match):
     if mid is None:
         # single line comment
         # return '' # remove single line
-        return match.group(0) # remain single line
+        return match.group(0)  # remain single line
     elif start is not None or end is not None:
         # multi line comment at start or end of a line
         return ''
@@ -41,12 +42,14 @@ def comment_replacer(match):
         # multi line comment without line break
         return ' '
 
+
 class Format_Dot_File():
     """
     Class Name: Format_Dot_File
     Class Description:
         Pre-processing dot file to convenient to parser.
     """
+
     def __init__(self):
         self.__source_dotfile = None
         self.__del_cmt_re = None
@@ -61,23 +64,27 @@ class Format_Dot_File():
             r'(^)?[^\S\n]*/(?:\*(.*?)\*/[^\S\n]*|/[^\n]*)($)?',
             re.DOTALL | re.MULTILINE
         )
-        
-        self.__target_dotfile = self.__del_cmt_re.sub(comment_replacer, self.__source_dotfile)
+
+        self.__target_dotfile = self.__del_cmt_re.sub(
+            comment_replacer, self.__source_dotfile)
         return self.__target_dotfile
 
 
 # TODO: Sort and create status groups
-    
+
 class Report_Dot_File():
     """
     Class Name: Report_Dot_File
     Class Description:
         Paser dot file and build state list.
     """
+
     def __init__(self):
         self.__file_dict = {}
+        self.logger = logging.getLogger("Report_Dot_File")
+
     # SUB_TODO: Create the state csv
-    def State_Collector(self,file_ptr):
+    def State_Collector(self, file_ptr):
         """
         Format:
         // STATE_START <STATE_TYPE>
@@ -108,7 +115,7 @@ class Report_Dot_File():
                 group_name = m.group(2)
                 Declare_Flag = True
                 if group_name not in state_dict:
-                    state_dict[group_name] = list()
+                    state_dict[group_name] = {}
                 continue
             m = re_state_end.search(line)
             if(m is not None):
@@ -118,12 +125,61 @@ class Report_Dot_File():
                 if group_name in state_dict:
                     state_name = re_state_name.search(line)
                     if (state_name is not None):
-                        state_dict[group_name].append(state_name.group(0))
-        self.__file_dict  = state_dict
+                        name = state_name.group(1)
+                        state_dict[group_name][name] = {}
+        self.__file_dict = state_dict
         return state_dict
-    def print_state_dict(self,dirt):
-        for state_group, state_list in dirt.items():
-            print("[%s]"%state_group)
-            for entry in state_list:
-                print (entry)
+
+    def print_state_dict(self, dict):
+        for state_group,state_list in dict.items():
+            print("[%s]" % state_group)
+            for cur_state, next_state_list in state_list.items():
+                for nxt_state, st_affector  in next_state_list.items():
+                    print("    %s -> %s [condition: %s]" %(cur_state, nxt_state, st_affector))
             print("------")
+        print(dict)
+
+    def build_affector_list(self, dict, file_ptr):
+        re_states = re.compile(r'^\s*(\w+)\s*->\s*(\w+)')
+        re_affectors = re.compile(r'\[\s*label\s*=\s*\"(.*)\"\s*\]')
+        file = file_ptr.split('\n')
+        for line in file:
+            st = None
+            index = file.index(line) + 1
+            # Find States and Next States
+            m_state = re_states.search(line)
+            if(m_state is not None):
+                state = m_state.group(1)
+                next_state = m_state.group(2)
+                m_affector = re_affectors.search(line)
+                for state_group,cur_state_list in dict.items():
+                    # print("[%s]: %s" % (state_group,cur_state_list))
+                    if state not in cur_state_list:
+                        self.logger.error("line %d: %s \n [Error] state(%s) not in dictionary"%(index,line,state))
+                        exit()
+                        # [FIXME]: Error handling
+                    
+                    if next_state in dict[state_group][state]:
+                        self.logger.error("line %d: %s \n [Error] next state is duplicate in dictionary"%(index,line))
+                        exit()   
+                    else:
+                        dict[state_group][state][next_state] = "" 
+              
+                    # Find Transitions
+                    if(m_affector is not None):
+                        dict[state_group][state][next_state] = m_affector.group(1)
+                        
+                        affector = m_affector.group(1)
+                        # Strip off ~ and ! etc.
+                        affector_stripped = re.sub(
+                            '[~|!()&^]', '', affector).split()
+                        self.logger.debug("Stripped affectors: '%s'" %
+                                        affector_stripped)
+                    else:
+                        pass
+                        affector = None
+
+                    # Next State
+                    self.logger.debug("Adding transition: %s -> %s (%s)" %
+                                    (state, next_state, affector))
+
