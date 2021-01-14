@@ -6,3 +6,4 @@
 function_test.py
 tb.dot
 .vscode/
+*.csv
