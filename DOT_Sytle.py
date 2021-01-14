@@ -137,7 +137,6 @@ class Report_Dot_File():
                 for nxt_state, st_affector  in next_state_list.items():
                     print("    %s -> %s [condition: %s]" %(cur_state, nxt_state, st_affector))
             print("------")
-        print(dict)
 
     def build_affector_list(self, dict, file_ptr):
         re_states = re.compile(r'^\s*(\w+)\s*->\s*(\w+)')
@@ -152,12 +151,16 @@ class Report_Dot_File():
                 state = m_state.group(1)
                 next_state = m_state.group(2)
                 m_affector = re_affectors.search(line)
+                f_not_exist = False
+                f_done = False
                 for state_group,cur_state_list in dict.items():
-                    # print("[%s]: %s" % (state_group,cur_state_list))
+                    if (f_done): # if line is already will go True
+                        continue
                     if state not in cur_state_list:
-                        self.logger.error("line %d: %s \n [Error] state(%s) not in dictionary"%(index,line,state))
-                        exit()
-                        # [FIXME]: Error handling
+                        f_not_exist = True
+                        continue
+                    else:
+                        f_not_exist = False
                     
                     if next_state in dict[state_group][state]:
                         self.logger.error("line %d: %s \n [Error] next state is duplicate in dictionary"%(index,line))
@@ -176,17 +179,34 @@ class Report_Dot_File():
                         self.logger.debug("Stripped affectors: '%s'" %
                                         affector_stripped)
                     else:
-                        pass
                         affector = None
-
-                    # Next State
                     self.logger.debug("Adding transition: %s -> %s (%s)" %
                                     (state, next_state, affector))
+                    f_done = True   # Finished fill next state and affector
+                if (f_not_exist):
+                    self.logger.error("line %d: %s \n [Error] state(%s) not in dictionary"%(index,line,state))
+                    exit()
+    # [TODO] export state table to csv
     def export_state_table_csv(self, dict, output_name):
-        str_temp_dict = {}
-        string_Temp = string.Template("""
-        
-        """)
+        csv_string = "attribute, current state, next state, affector\n"
+        for state_group,state_list in dict.items():
+            for cur_state, next_state_list in state_list.items():
+                for nxt_state, st_affector  in next_state_list.items():
+                    csv_string += "%s,%s,%s,%s\n" %(state_group,cur_state, nxt_state, st_affector)
         file = open(output_name, 'w')
-        file.write(string_Temp.safe_substitute(str_temp_dict))
+        file.write(csv_string)
         file.close
+    # [TODO] import csv as dictionary
+    def import_csv_as_dict(input_file):
+        file = open(input_file,'r')
+        file_ptr = file.read().split('\n')
+        file.close()
+        for line in file_ptr:
+            print(line)
+        
+    # [TODO] export state table to dot
+    def export_state_table_dot(dict,output_name):
+        pass
+
+    def search_nested_dict_key(dict):
+        pass
