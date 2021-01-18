@@ -69,9 +69,6 @@ class Format_Dot_File():
             comment_replacer, self.__source_dotfile)
         return self.__target_dotfile
 
-
-# TODO: Sort and create status groups
-
 class Report_Dot_File():
     """
     Class Name: Report_Dot_File
@@ -83,8 +80,8 @@ class Report_Dot_File():
         self.__file_dict = {}
         self.logger = logging.getLogger("Report_Dot_File")
 
-    # SUB_TODO: Create the state csv
-    def State_Collector(self, file_ptr):
+    # Function: Collect state as dict
+    def build_state_list_mapping_table(self, file_ptr):
         """
         Format:
         // STATE_START <STATE_TYPE>
@@ -186,9 +183,60 @@ class Report_Dot_File():
                 if (f_not_exist):
                     self.logger.error("line %d: %s \n [Error] state(%s) not in dictionary"%(index,line,state))
                     exit()
-    # [TODO] export state table to csv
+    
+    def build_state_transition_list(self, dict, file_ptr):
+        re_states = re.compile(r'^\s*(\w+)\s*->\s*(\w+)')
+        re_affectors = re.compile(r'\[\s*label\s*=\s*\"(.*)\"\s*\]')
+        file = file_ptr.split('\n')
+        for line in file:
+            st = None
+            index = file.index(line) + 1
+            # Find States and Next States
+            m_state = re_states.search(line)
+            if(m_state is not None):
+                state = m_state.group(1)
+                next_state = m_state.group(2)
+                m_affector = re_affectors.search(line)
+                f_not_exist = False
+                f_done = False
+                for state_group,cur_state_list in dict.items():
+                    if (f_done): # if line is already will go True
+                        continue
+                    if state not in cur_state_list:
+                        f_not_exist = True
+                        continue
+                    else:
+                        f_not_exist = False
+                    
+                    if next_state in dict[state_group][state]:
+                        self.logger.error("line %d: %s \n [Error] next state is duplicate in dictionary"%(index,line))
+                        exit()   
+                    else:
+                        dict[state_group][state][next_state] = "" 
+              
+                    # Find Transitions
+                    if(m_affector is not None):
+                        dict[state_group][state][next_state] = m_affector.group(1)
+                        
+                        affector = m_affector.group(1)
+                        # Strip off ~ and ! etc.
+                        affector_stripped = re.sub(
+                            '[~|!()&^]', '', affector).split()
+                        self.logger.debug("Stripped affectors: '%s'" %
+                                        affector_stripped)
+                    else:
+                        affector = None
+                    self.logger.debug("Adding transition: %s -> %s (%s)" %
+                                    (state, next_state, affector))
+                    f_done = True   # Finished fill next state and affector
+                if (f_not_exist):
+                    self.logger.error("line %d: %s \n [Error] state(%s) not in dictionary"%(index,line,state))
+                    exit()
+
+    # Function: export state table to csv
     def export_state_table_csv(self, dict, output_name):
-        csv_string = "attribute, current state, next state, affector\n"
+        # csv_string = "attribute, current state, next state, affector\n"
+        csv_string = ""
         for state_group,state_list in dict.items():
             for cur_state, next_state_list in state_list.items():
                 for nxt_state, st_affector  in next_state_list.items():
@@ -196,17 +244,47 @@ class Report_Dot_File():
         file = open(output_name, 'w')
         file.write(csv_string)
         file.close
-    # [TODO] import csv as dictionary
-    def import_csv_as_dict(input_file):
+
+    # Function: import csv as dictionary
+    def import_csv_as_dict(self,input_file):
         file = open(input_file,'r')
         file_ptr = file.read().split('\n')
         file.close()
+        state_dict = {}
         for line in file_ptr:
-            print(line)
-        
-    # [TODO] export state table to dot
-    def export_state_table_dot(dict,output_name):
-        pass
+            entires = line.split(',')
+            if(len(entires) >= 2): # Check entires more than 2 (group and cur_state)
+                group_name = entires[0]
+                cur_state_name = entires[1]
+                next_state_name = entires[2]
+                affector_name = entires[3]
+                if(group_name not in state_dict):
+                    state_dict[group_name] = {}
+                if(cur_state_name not in state_dict[group_name]):
+                    state_dict[group_name][cur_state_name]={}
+                if(next_state_name not in state_dict[group_name][cur_state_name]):
+                    state_dict[group_name][cur_state_name][next_state_name] = affector_name
+        return state_dict
+                
+            
+
+    # Function: export state table to dot
+    def export_state_table_dot(self,dict,output_name):
+        dot_string = "digraph output{\n"
+        for state_group,state_list in dict.items():
+            dot_string += "\t// STATE_START %s\n"%(state_group)
+            for cur_state in state_list:
+                dot_string += "\t\t%s\n"%(cur_state)
+            dot_string += "\t// STATE_END\n"
+        for state_group,state_list in dict.items():
+            for cur_state, next_state_list in state_list.items():
+                for nxt_state, st_affector  in next_state_list.items():
+                    dot_string += "\t\t%s -> %s [label= \"%s\"]\n" %(cur_state, nxt_state, st_affector)  
+        dot_string += "}"                    
+        file = open(output_name, 'w')
+        file.write(dot_string)
+        file.close
+    
 
     def search_nested_dict_key(dict):
         pass
