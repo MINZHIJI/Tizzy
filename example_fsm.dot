@@ -1,12 +1,12 @@
 digraph example_fsm
 {
     label = "Example Finite State Machine";
-// STATE_START NAND_DU
+// STATE_START Group_1
 stIDLE [label = "{stIDLE|asdada}" ]
 stPIPE1 [label = "{stPIPE1|asdada}" ]
 stPIPE2
 // STATE_END
-// STATE_START HTI_DU
+// STATE_START Group_2
 stLOAD_NEXT
 stLOAD_DOUT
 // STATE_END

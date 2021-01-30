@@ -1,0 +1,43 @@
+{
+    "Group_1":{
+        "interface":{
+            "REQ":{
+                "width": "1",
+                "io": "output",
+                "comment": ""
+            },
+            "ACK":{
+                "width": "1",
+                "io": "input",
+                "comment": ""
+            }
+        }
+    },
+    "Group_2":{
+        "interface":{
+            "REQ":{
+                "width": "1",
+                "io": "output",
+                "comment": ""
+            },
+            "ACK":{
+                "width": "1",
+                "io": "input",
+                "comment": ""
+            },
+            "RESP":{
+                "width": "1",
+                "io": "input",
+                "comment": ""
+            }
+        }
+    },
+    "FSM":{
+        "interface":{
+        },
+        "flags":{
+
+        },
+        "state_initial": "stIDLE"
+    }
+}
